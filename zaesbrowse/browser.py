@@ -60,7 +60,6 @@ class Browser( object ):
       listbox_scroller = gtk.ScrolledWindow()
       listbox_scroller.set_size_request( 200, 200 )
       listbox_scroller.props.vscrollbar_policy = gtk.POLICY_AUTOMATIC
-      listbox_scroller.props.hscrollbar_policy = gtk.POLICY_AUTOMATIC
       listbox_scroller.add_with_viewport( self.listbox )
 
       # Create the log viewer.
@@ -113,6 +112,29 @@ class Browser( object ):
       else:
          return None
 
+   def show_archive( self, archive_path, key, salt ):
+
+      arcz = ifdyutil.archive.handle( archive_path, key, salt )
+
+      # TODO: Clear listbox first.
+      for item in arcz.namelist():
+         # Skip index directories.
+         if item.startswith( '/index' ):
+            continue
+
+         # Create and add the listbox item.
+         label = gtk.Label( item )
+         label.set_alignment( 0, 0.5 )
+         label.show()
+         list_item = gtk.ListItem()
+         list_item.add( label )
+         list_item.set_data(
+            'contents',
+            arcz.open( item ).read()
+         )
+         list_item.show()
+         self.listbox.add( list_item )
+
    def on_search( self, widget ):
 
       self.results = result_list
@@ -159,27 +181,7 @@ class Browser( object ):
             if None == key:
                return
 
-            arcz = ifdyutil.archive.handle(
-               dialog.get_filename(), key, 'dCJVFT%fv345gyW'
-            )
-
-            # TODO: Clear listbox first.
-            for item in arcz.namelist():
-               # Skip index directories.
-               if item.startswith( '/index' ):
-                  continue
-
-               label = gtk.Label( item )
-               label.set_justify( gtk.JUSTIFY_LEFT )
-               label.show()
-               list_item = gtk.ListItem()
-               list_item.add( label )
-               list_item.set_data(
-                  'contents',
-                  arcz.open( item ).read()
-               )
-               list_item.show()
-               self.listbox.add( list_item )
+            self.show_archive( dialog.get_filename(), key, 'dCJVFT%fv345gyW' )
 
       except Exception, e:
          self.logger.error( 'Unable to open {}: {}'.format(
