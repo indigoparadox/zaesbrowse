@@ -116,7 +116,10 @@ class Browser( object ):
 
       arcz = ifdyutil.archive.handle( archive_path, key, salt )
 
-      # TODO: Clear listbox first.
+      # Clear the list box.
+      for child in self.listbox.get_children():
+         child.destroy()
+
       for item in arcz.namelist():
          # Skip index directories.
          if item.startswith( '/index' ):
