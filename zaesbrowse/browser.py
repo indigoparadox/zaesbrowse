@@ -20,6 +20,7 @@ import gtk
 import logging
 import re
 import ifdyutil.archive
+import dialogs
 
 class Browser( object ):
 
@@ -44,7 +45,7 @@ class Browser( object ):
       filem = gtk.MenuItem( 'File' )
       filem.set_submenu( filemenu )
 
-      openm = gtk.MenuItem( 'Open' )
+      openm = gtk.MenuItem( 'Open...' )
       openm.connect( 'activate', self.on_open )
       filemenu.append( openm )
 
@@ -53,6 +54,17 @@ class Browser( object ):
       filemenu.append( exitm )
 
       mb.append( filem )
+
+      # Create a tools menu.
+      toolsmenu = gtk.Menu()
+      toolsm = gtk.MenuItem( 'Tools' )
+      toolsm.set_submenu( toolsmenu )
+
+      searchm = gtk.MenuItem( 'Search...' )
+      searchm.connect( 'activate', self.on_search )
+      toolsmenu.append( searchm )
+
+      mb.append( toolsm )
 
       # Create the log list.
       self.listbox = gtk.List()
@@ -85,32 +97,35 @@ class Browser( object ):
 
       gtk.main()
 
-   def show_unlock( self ):
+   def show_search( self, phrase=None ):
 
-      dialog = gtk.MessageDialog(
-         self.window,
-         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-         gtk.MESSAGE_QUESTION,
-         gtk.BUTTONS_OK_CANCEL,
-         'Please enter the archive encryption key:'
-      )
+      # Update the search results.
+      #self.results = result_list
+      if phrase:
+         self.phrase = phrase
 
-      # Create the text entry field.
-      entry = gtk.Entry()
-      entry.show()
-      
-      dialog.vbox.pack_end( entry )
-      entry.connect( 'activate', lambda _: dialog.response( gtk.RESPONSE_OK ) )
-      dialog.set_default_response( gtk.RESPONSE_OK )
+      # Clear the buffer.
+      buf = self.editor.get_buffer()
+      buf.remove_all_tags( buf.get_start_iter(), buf.get_end_iter() )
 
-      # Process the response.
-      response = dialog.run()
-      text = entry.get_text()
-      dialog.destroy()
-      if gtk.RESPONSE_OK == response:
-         return text
-      else:
-         return None
+      # Find all lines with the search phrase in them.
+      phrase_words = self.phrase.split( ' ' )
+      for word in phrase_words:
+         # Clean out non-alphanumeric symbols.
+         word = re.sub( r'\W+', '', word )
+
+         # Perform the highlight.
+         phrase_spans = re.finditer(
+            re.escape( word ),
+            buf.get_text( buf.get_start_iter(), buf.get_end_iter() )
+         )
+         for span in phrase_spans:
+            span = span.span()
+            buf.apply_tag_by_name(
+               'highlighted',
+               buf.get_iter_at_offset( span[0] ),
+               buf.get_iter_at_offset( span[1] )
+            )
 
    def show_archive( self, archive_path, key, salt ):
 
@@ -139,9 +154,8 @@ class Browser( object ):
          self.listbox.add( list_item )
 
    def on_search( self, widget ):
-
-      self.results = result_list
-      self.phrase = search_phrase
+      phrase = dialogs.SearchDialog( self.window ).run()
+      self.show_search( phrase )
 
    def on_open( self, widget ):
 
@@ -180,7 +194,7 @@ class Browser( object ):
             #   dialog.get_filename(), 'foo', 'dCJVFT%fv345gyW', 'lol' 
             #)
 
-            key = self.show_unlock()
+            key = dialogs.UnlockDialog( self.window ).run()
             if None == key:
                return
 
@@ -206,23 +220,7 @@ class Browser( object ):
 
          # Set the buffer text.
          buf = self.editor.get_buffer()
-         buf.remove_all_tags( buf.get_start_iter(), buf.get_end_iter() )
          buf.set_text( contents )
 
-         if self.phrase:
-            # Find all lines with the search phrase in them.
-            phrase_words = self.phrase.split( ' ' )
-            for word in phrase_words:
-               # Clean out non-alphanumeric symbols.
-               word = re.sub( r'\W+', '', word )
-
-               # Perform the highlight.
-               phrase_spans = re.finditer( re.escape( word ), contents )
-               for span in phrase_spans:
-                  span = span.span()
-                  buf.apply_tag_by_name(
-                     'highlighted',
-                     buf.get_iter_at_offset( span[0] ),
-                     buf.get_iter_at_offset( span[1] )
-                  )
+         self.show_search()
 
