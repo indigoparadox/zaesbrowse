@@ -29,6 +29,7 @@ class Browser( object ):
    results = []
    phrase = ''
    logger = None
+   arcz = None
 
    def __init__( self ):
 
@@ -97,12 +98,15 @@ class Browser( object ):
 
       gtk.main()
 
-   def show_search( self, phrase=None ):
+   def show_search( self, phrase=None, arcz=None ):
 
       # Update the search results.
       #self.results = result_list
-      if phrase:
+      if None != phrase:
          self.phrase = phrase
+
+      if arcz:
+         self.arcz = arcz
 
       # Clear the buffer.
       buf = self.editor.get_buffer()
@@ -127,31 +131,39 @@ class Browser( object ):
                buf.get_iter_at_offset( span[1] )
             )
 
-   def show_archive( self, archive_path, key, salt ):
+      # Refresh the file list.
+      if None != phrase:
+         # Clear the list box.
+         for child in self.listbox.get_children():
+            child.destroy()
 
-      arcz = ifdyutil.archive.handle( archive_path, key, salt )
+         # Get the new results and post them.
+         result_list = ifdyutil.archive.search( self.arcz, self.phrase )
+         if not result_list:
+            # Looks like we need to improvise.
+            result_list = []
+            for item in self.arcz.namelist():
+               item_file = self.arcz.open( item )
+               result_list.append( {
+                  'filename': item,
+                  'contents': item_file.read()
+               } )
+               item_file.close()
+               
+         for item in result_list:
+            # Skip index directories.
+            if item.get( 'filename' ).startswith( '/index' ):
+               continue
 
-      # Clear the list box.
-      for child in self.listbox.get_children():
-         child.destroy()
-
-      for item in arcz.namelist():
-         # Skip index directories.
-         if item.startswith( '/index' ):
-            continue
-
-         # Create and add the listbox item.
-         label = gtk.Label( item )
-         label.set_alignment( 0, 0.5 )
-         label.show()
-         list_item = gtk.ListItem()
-         list_item.add( label )
-         list_item.set_data(
-            'contents',
-            arcz.open( item ).read()
-         )
-         list_item.show()
-         self.listbox.add( list_item )
+            # Create and add the listbox item.
+            label = gtk.Label( item.get( 'filename' ) )
+            label.set_alignment( 0, 0.5 )
+            label.show()
+            list_item = gtk.ListItem()
+            list_item.add( label )
+            list_item.set_data( 'contents', item.get( 'contents' ) )
+            list_item.show()
+            self.listbox.add( list_item )
 
    def on_search( self, widget ):
       phrase = dialogs.SearchDialog( self.window ).run()
@@ -189,17 +201,14 @@ class Browser( object ):
             #   'LastDir', os.path.dirname( dialog.get_filename() )
             #)
 
-            #result_list = ifdyutil.archive.search(
-            #   # TODO: Get salt from config.
-            #   dialog.get_filename(), 'foo', 'dCJVFT%fv345gyW', 'lol' 
-            #)
-
             key = dialogs.UnlockDialog( self.window ).run()
             if None == key:
                return
 
-            self.show_archive( dialog.get_filename(), key, 'dCJVFT%fv345gyW' )
-
+            arcz = ifdyutil.archive.handle(
+               dialog.get_filename(), key, 'dCJVFT%fv345gyW'
+            )
+         
       except Exception, e:
          self.logger.error( 'Unable to open {}: {}'.format(
             dialog.get_filename(), e.message
@@ -207,6 +216,15 @@ class Browser( object ):
 
       finally:
          dialog.destroy()
+
+      # Do our work out here where we can raise exceptions.
+      if arcz:
+         
+         # Close the current archive.
+         if self.arcz:
+            self.arcz.close()
+
+         self.show_search( phrase='', arcz=arcz )
 
    def on_selection( self, widget ):
       selection = widget.get_selection()
