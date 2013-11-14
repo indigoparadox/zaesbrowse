@@ -25,7 +25,7 @@ import zaesbrowse.browser
 
 def main():
 
-   logging.basicConfig( level=logging.INFO )
+   logging.basicConfig( level=logging.DEBUG )
 
    zaesbrowse.browser.Browser()
 

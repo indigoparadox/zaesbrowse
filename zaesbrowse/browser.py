@@ -19,8 +19,9 @@ with ZAESBrowse.  If not, see <http://www.gnu.org/licenses/>.
 import gtk
 import logging
 import re
-import ifdyutil.archive
 import dialogs
+import sys
+import ifdyutil.archive
 
 class Browser( object ):
 
@@ -64,6 +65,10 @@ class Browser( object ):
       searchm = gtk.MenuItem( 'Search...' )
       searchm.connect( 'activate', self.on_search )
       toolsmenu.append( searchm )
+
+      upgradem = gtk.MenuItem( 'Upgrade...' )
+      upgradem.connect( 'activate', self.on_upgrade )
+      toolsmenu.append( upgradem )
 
       mb.append( toolsm )
 
@@ -169,6 +174,29 @@ class Browser( object ):
       phrase = dialogs.SearchDialog( self.window ).run()
       self.show_search( phrase )
 
+   def on_upgrade( self, widget ):
+
+      if not self.arcz:
+         self.logger.error( 'No open archive available to upgrade.' )
+         return
+
+      # Display a file open dialog.
+      dialog =  gtk.FileChooserDialog(
+         'Save Archive...',
+         None,
+         gtk.FILE_CHOOSER_ACTION_SAVE,
+         (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,
+            gtk.STOCK_SAVE, gtk.RESPONSE_OK)
+      )
+      dialog.set_default_response( gtk.RESPONSE_OK )
+      response = dialog.run()
+      file_name = dialog.get_filename()
+      dialog.destroy()
+
+      if gtk.RESPONSE_OK == response:
+         new_key = dialogs.UnlockDialog( self.window ).run()
+         ifdyutil.archive.upgrade( self.arcz, file_name, new_key )
+
    def on_open( self, widget ):
 
       # Display a file open dialog.
@@ -193,36 +221,26 @@ class Browser( object ):
       allfilter.add_pattern( '*' )
       dialog.add_filter( allfilter )
 
-      try:
-         response = dialog.run()
-         if gtk.RESPONSE_OK == response:
-            # Store the last used path for later.
-            #self.config.set_value(
-            #   'LastDir', os.path.dirname( dialog.get_filename() )
-            #)
+      response = dialog.run()
+      file_name = dialog.get_filename()
+      dialog.destroy()
+      if gtk.RESPONSE_OK == response:
+         # Store the last used path for later.
+         #self.config.set_value(
+         #   'LastDir', os.path.dirname( dialog.get_filename() )
+         #)
 
-            key = dialogs.UnlockDialog( self.window ).run()
-            if None == key:
-               return
+         key = dialogs.UnlockDialog( self.window ).run()
+         if None == key:
+            return
 
-            arcz = ifdyutil.archive.handle(
-               dialog.get_filename(), key, 'dCJVFT%fv345gyW'
-            )
-            if self.arcz:
-               self.arcz.close()
-            self.arcz = arcz
-         
-      except Exception, e:
-         self.logger.error( 'Unable to open {}: {}'.format(
-            dialog.get_filename(), e.message
-         ) )
-
-      finally:
-         dialog.destroy()
-
-      # Do our work out here where we can raise exceptions.
-      if self.arcz:
-         self.show_search( phrase='', arcz=arcz )
+         arcz = ifdyutil.archive.handle( file_name, key )
+         # 'dCJVFT%fv345gyW'
+         if self.arcz:
+            self.arcz.close()
+         self.arcz = arcz
+         if self.arcz:
+            self.show_search( phrase='', arcz=arcz )
 
    def on_selection( self, widget ):
       selection = widget.get_selection()
