@@ -208,6 +208,9 @@ class Browser( object ):
             arcz = ifdyutil.archive.handle(
                dialog.get_filename(), key, 'dCJVFT%fv345gyW'
             )
+            if self.arcz:
+               self.arcz.close()
+            self.arcz = arcz
          
       except Exception, e:
          self.logger.error( 'Unable to open {}: {}'.format(
@@ -218,12 +221,7 @@ class Browser( object ):
          dialog.destroy()
 
       # Do our work out here where we can raise exceptions.
-      if arcz:
-         
-         # Close the current archive.
-         if self.arcz:
-            self.arcz.close()
-
+      if self.arcz:
          self.show_search( phrase='', arcz=arcz )
 
    def on_selection( self, widget ):
