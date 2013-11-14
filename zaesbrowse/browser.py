@@ -195,7 +195,18 @@ class Browser( object ):
 
       if gtk.RESPONSE_OK == response:
          new_key = dialogs.UnlockDialog( self.window ).run()
-         ifdyutil.archive.upgrade( self.arcz, file_name, new_key )
+         item_list = []
+         for name in self.arcz.namelist():
+            item_list.append( {
+               'path_rel': name,
+               'contents': self.arcz.read( name )
+            } )
+         ifdyutil.archive.create(
+            file_name,
+            new_key,
+            item_list=item_list,
+            index=False
+         )
 
    def on_open( self, widget ):
 
