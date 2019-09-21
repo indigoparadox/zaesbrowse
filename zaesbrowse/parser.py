@@ -20,19 +20,19 @@ import re
 
 class Parser( object ):
 
-   contents = ''
-   highlighted_words = []
+    contents = ''
+    highlighted_words = []
 
-   def __init__( self, contents, highlighted_words=[] ):
-      
-      self.contents = contents
-      
-   def parse( self ):
+    def __init__( self, contents, highlighted_words=[] ):
+        
+        self.contents = contents
+        
+    def parse( self ):
 
-      # TODO: Iterate through the body and wrap highlighted_words in spans.
+        # TODO: Iterate through the body and wrap highlighted_words in spans.
 
-      # TODO: Maybe move parsers to a plugin system or something.
+        # TODO: Maybe move parsers to a plugin system or something.
 
-      re_pidgin = re.compile( '^Conversation with .*' )
-      
+        re_pidgin = re.compile( '^Conversation with .*' )
+        
 

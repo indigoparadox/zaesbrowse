@@ -25,46 +25,46 @@ import zaesbrowse.browser
 
 def main():
 
-   logging.basicConfig( level=logging.DEBUG )
+    logging.basicConfig( level=logging.DEBUG )
 
-   zaesbrowse.browser.Browser()
+    zaesbrowse.browser.Browser()
 
-   '''
-   parser = argparse.ArgumentParser()
-   subparsers = parser.add_subparsers( dest='command' )
+    '''
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers( dest='command' )
 
-   parser_search = subparsers.add_parser( 'search' )
-   #parser_search.add_argument(
-   #   '-c', '--context', action='store', dest='context', type=int, default=3,
-   #   help='The number of lines of context (in each direction) to display ' +
-   #      'for each result.'
-   #)
-   parser_search.add_argument(
-      'archive_path', action='store',
-      help='The archive file to search within.'
-   )
-   parser_search.add_argument(
-      'search_phrase', action='store',
-      help='The phrase to search for within the archive.'
-   )
+    parser_search = subparsers.add_parser( 'search' )
+    #parser_search.add_argument(
+    #    '-c', '--context', action='store', dest='context', type=int, default=3,
+    #    help='The number of lines of context (in each direction) to display ' +
+    #        'for each result.'
+    #)
+    parser_search.add_argument(
+        'archive_path', action='store',
+        help='The archive file to search within.'
+    )
+    parser_search.add_argument(
+        'search_phrase', action='store',
+        help='The phrase to search for within the archive.'
+    )
 
-   args = parser.parse_args()
+    args = parser.parse_args()
 
-   elif 'search' == args.command:
-      result_list = ifdyutil.archive.search(
-         args.archive_path, key, PIDGIN_LOG_KEY_SALT, args.search_phrase
-      )
-      try:
-         import arcbrowse
-         zaesbrowse.browser.Browser( result_list, args.search_phrase )
-      except Exception, e:
-         # Fall back to the command line.
-         # TODO: Implement CLI search result viewer.
-         logger.error(
-            'Unable to start graphical log viewer: {}'.format( e.message )
-         )
-   '''
+    elif 'search' == args.command:
+        result_list = ifdyutil.archive.search(
+            args.archive_path, key, PIDGIN_LOG_KEY_SALT, args.search_phrase
+        )
+        try:
+            import arcbrowse
+            zaesbrowse.browser.Browser( result_list, args.search_phrase )
+        except Exception, e:
+            # Fall back to the command line.
+            # TODO: Implement CLI search result viewer.
+            logger.error(
+                'Unable to start graphical log viewer: {}'.format( e.message )
+            )
+    '''
 
 if '__main__' == __name__:
-   main()
+    main()
 
